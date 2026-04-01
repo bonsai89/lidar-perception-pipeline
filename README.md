@@ -4,7 +4,15 @@ End-to-end 3D perception pipeline for infrastructure-mounted LiDAR: ground remov
 
 Built as a self-contained Python implementation demonstrating classical perception techniques on real 128-beam LiDAR data from an urban intersection scene.
 
-![Pipeline Overview](docs/figures/pipeline_overview.png)
+<p align="center">
+  <img src="pipeline_demo.gif" alt="Pipeline Demo" width="720">
+</p>
+
+<p align="center"><i>10 sequential LiDAR frames processed through the full pipeline. Blue = car, red = pedestrian, yellow = bicyclist, gray = background, green = ground. Bounding boxes show classified objects, dot markers show tracked object IDs.</i></p>
+
+> 📹 [Full resolution video (pipeline_demo.mp4)](pipeline_demo.mp4)
+
+*See [docs/architecture.md](docs/architecture.md) for the full pipeline diagram and feature group breakdown.*
 
 ---
 
@@ -143,7 +151,7 @@ pip install -r requirements.txt
 
 **Data:** This project was developed on proprietary LiDAR data and the point cloud files are not included. The code expects binary float32 files with the following structure:
 - Classification data: `data/{train,test}/{background,bicyclist,car,pedestrian}/*.bin` (3 floats per point: x, y, z)
-- Sequential frames: `data/optional_challenge_data/*.bin` (5 floats per point: x, y, z, intensity, ring)
+- Sequential frames: `data/sequential_scenes/*.bin` (5 floats per point: x, y, z, intensity, ring)
 
 ---
 
@@ -152,7 +160,7 @@ pip install -r requirements.txt
 ### Classification
 
 ```bash
-# Train and evaluate with 23-feature mode (main submission)
+# Train and evaluate with 23-feature mode
 python -m src.classification.feature_classifier --features 23
 
 # Run feature ablation study
