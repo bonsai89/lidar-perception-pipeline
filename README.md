@@ -2,7 +2,21 @@
 
 End-to-end 3D perception pipeline for infrastructure-mounted LiDAR: ground removal, clustering, classification, and multi-object tracking.
 
-Built as a self-contained Python implementation demonstrating classical perception techniques on real 128-beam LiDAR data from an urban intersection scene.
+This project was built to demonstrate **recent, hands-on work in LiDAR perception systems**, with a focus on real-world robustness, system design, and deployment constraints.
+
+It reflects my experience building perception pipelines for autonomous driving systems, extended into a complete, self-contained implementation.
+
+---
+
+## Key Takeaways
+
+- Built a full perception pipeline from raw point clouds → tracked objects
+- Designed for real-world challenges: noise, occlusion, class ambiguity
+- Achieved **0.82 macro-F1** across 4 classes using handcrafted features
+- Implemented **Kalman filter tracking with data association**
+- Analyzed latency and defined a path to **real-time (<100ms) deployment**
+
+---
 
 <p align="center">
   <img src="pipeline_demo.gif" alt="Pipeline Demo" width="720">
@@ -18,7 +32,7 @@ Built as a self-contained Python implementation demonstrating classical percepti
 
 ## What This Project Does
 
-Takes raw LiDAR point clouds (~184k points per frame) and produces classified, tracked objects (cars, pedestrians, bicyclists) with persistent IDs across 10 sequential frames.
+Takes raw LiDAR point clouds (~184k points per frame) and produces classified, tracked objects (cars, pedestrians, bicyclists) with persistent IDs across 10 sequential frames. The pipeline is designed to reflect how real-world perception systems are built: modular, iterative, and robust to environmental variation.
 
 **Pipeline stages:**
 
