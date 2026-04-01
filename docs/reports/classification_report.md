@@ -250,7 +250,7 @@ Data augmentation with partial views with more data would really help RF to lear
 
 I visually checked the misclassified classes and noticed that majority of the misclassification is due to sparse and shapeless pointclouds. While there were some clear bicycle like shapes in background which was predicted as bicycle.
 
-<img src="report_images/image1.png" width="280">
+<img src="docs/figures/image1.png" width="280">
 
 *Figure 1: Misclassified example - side view (XZ plane)*
 
@@ -258,13 +258,13 @@ I visually checked the misclassified classes and noticed that majority of the mi
 
 While there were some clear misclassifications, here are some samples:
 
-<img src="report_images/image4.png" width="320">
+<img src="docs/figures/image4.png" width="320">
 
 *Figure 2: Examples from background-car misclassification - the pointclouds clearly look like car*
 
 &nbsp;
 
-<img src="report_images/image6.png" width="320">
+<img src="docs/figures/image6.png" width="320">
 
 *Figure 3: Background-car confusion examples*
 
@@ -332,7 +332,7 @@ While working on the optional challenge I uncovered several edge cases which rei
 
 **z_range_cleaned** uses 5th-95th percentile instead of raw min/max. Background clusters often have one stray point far above or below the main body, inflating z_range to look like a pedestrian or car. Cleaning removes these outliers. Helped remove leaking ground points in clusters to a great extent.
 
-<img src="report_images/image8.png" width="320">
+<img src="docs/figures/image8.png" width="320">
 
 *Figure 4: Ground point leakage in clusters - z_range_cleaned addresses this*
 
@@ -340,7 +340,7 @@ While working on the optional challenge I uncovered several edge cases which rei
 
 **hull_point_ratio** is the fraction of points on the convex hull. Solid objects like cars have most points inside the hull so low ratio. Scattered background fragments have most points on the hull so high ratio.
 
-<img src="report_images/image10.png" width="320">
+<img src="docs/figures/image10.png" width="320">
 
 *Figure 5: Convex hull ratio - solid objects vs scattered fragments*
 
@@ -358,7 +358,7 @@ After adding these features macroF1 slightly went up to 0.82, but I was able to 
 
 Another aspect the optional challenge revealed which was already partially revealed in the first task was that many clusters only have part of the object, like half a car, half a pedestrian, only top half of a car, etc. There is a lot of occlusion in the clusters mainly due to lidar angle and distance of objects vary from the sensor. So I decided to do data-augmentation especially targeted at cars which are cut off in middle and pedestrians whose torso is missing, or only shoulder to head is seen.
 
-<img src="report_images/image13.png" width="260">
+<img src="docs/figures/image13.png" width="260">
 
 *Figure 6: Occlusion examples - partial objects in LiDAR data*
 
@@ -366,13 +366,13 @@ Another aspect the optional challenge revealed which was already partially revea
 
 So I designed data augmentation specifically for the pedestrian, bicyclist, and car classes.
 
-<img src="report_images/image16.png" width="250">
+<img src="docs/figures/image16.png" width="250">
 
 *Figure 7: Augmentation cut patterns per class*
 
 &nbsp;
 
-<img src="report_images/image19.png" width="320">
+<img src="docs/figures/image19.png" width="320">
 
 *Figure 8: PCA-aware cuts for cars*
 
@@ -382,7 +382,7 @@ For cars due to their arbitrary alignment with the lidar, I decided to add PCA a
 
 On cross-validation the augmented models showed +2.5pp improvement across all feature modes (19, 23, 35). But on the held-out test set all three degraded by roughly 3pp but with the actual optional challenge data it was able to correctly classify partially occluded cars and pedestrians.
 
-<img src="report_images/image21.png" width="320">
+<img src="docs/figures/image21.png" width="320">
 
 *Figure 9: Augmentation results - partially occluded objects correctly classified*
 
@@ -402,7 +402,7 @@ So I replaced axis-aligned bounding box measurements with 2D PCA-aligned measure
 
 Pillar and blocks wrongly classified as pedestrian.
 
-<img src="report_images/image24.png" width="320">
+<img src="docs/figures/image24.png" width="320">
 
 *Figure 10: Pillars and blocks wrongly classified as pedestrian*
 
@@ -416,7 +416,7 @@ Pillar and blocks wrongly classified as pedestrian.
 
 As previously noticed in the classification problem there are clusters with ground leaking into, or other objects partially appearing in the scene, like tree foliage, occluded pedestrian standing near car, pedestrians walking side by side, etc. This affected classification and often led to misclassification.
 
-<img src="report_images/image25.png" width="320">
+<img src="docs/figures/image25.png" width="320">
 
 *Figure 11: Group of pedestrians misclassified as a car*
 
@@ -449,8 +449,8 @@ Once the tracker has confirmed tracks from previous frames, I use their position
 Track-guided splits skip the PCA linearity check since the tracker's temporal evidence is stronger than single-frame geometry. The same piece validation still applies.
 
 <div style="display: flex; align-items: center; gap: 10px;">
-  <img src="report_images/image26.png" width="320">
-  <img src="report_images/image27.png" width="320">
+  <img src="docs/figures/image26.png" width="320">
+  <img src="docs/figures/image27.png" width="320">
 </div>
 
 *Figure 12: Pink - PCA split clusters, Cyan - track-guided splits*
@@ -463,8 +463,8 @@ The opposite problem also occurred, a small cluster of noise points sits entirel
 
 The ordering matters. In the pipeline the flow is: cluster → split → merge engulfed → classify → track. Split runs first to break merged pedestrians apart. Then merge absorbs small interior fragments. Then the classifier sees clean, properly separated clusters.
 <div style="display: flex; align-items: center; gap: 10px;">
-  <img src="report_images/image28.png" width="300">
-  <img src="report_images/image29.png" width="300">
+  <img src="docs/figures/image28.png" width="300">
+  <img src="docs/figures/image29.png" width="300">
 </div>
 
 *Figure 13: Small clusters fully engulfed in larger clusters are absorbed into the larger cluster*
@@ -479,7 +479,7 @@ The ordering matters. In the pipeline the flow is: cluster → split → merge e
 
 There are cases where the objects are still wrongly classified which need much closer fine-tuning with lot more data for training, especially covering the edge case scenarios. Here are some examples:
 
-<img src="report_images/image32.png" width="320">
+<img src="docs/figures/image32.png" width="320">
 
 *Figure 14: Left - wrongly predicted as car, the pedestrians don't align on a common principal axis so the split clustering misses it. Right - pedestrians get classified as bicyclists which is a very common misclassification prone to the geometric similarity between the classes.*
 

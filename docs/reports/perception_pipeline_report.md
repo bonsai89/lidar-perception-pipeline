@@ -14,7 +14,7 @@ One important observation: the sensor is tilted. The ground plane is not aligned
 
 Some frames have z-outliers as low as -73m which I clipped out early in the pipeline.
 
-<img src="report_images/image33.png" width="440">
+<img src="docs/figures/image33.png" width="440">
 
 &nbsp;
 
@@ -50,7 +50,7 @@ My first attempt was naive RANSAC on the full scene for each frame. I set the di
 
 It failed. RANSAC locked onto car roofs instead of the ground because the roof of a bus has more coplanar points in a local region than the actual road surface. Also it took 6-7 seconds per frame which is way too slow.
 
-<img src="report_images/image34.png" width="440">
+<img src="docs/figures/image34.png" width="440">
 
 ### Iteration 2: Rotation + Flat Threshold
 
@@ -60,7 +60,7 @@ The approach: run RANSAC only on nearby points within 10m of the sensor origin. 
 
 Latency went from 6-7 seconds to 5-10ms per frame. But the flat threshold missed ground at far range where the road slopes, and sometimes caught pedestrians at range.
 
-<img src="report_images/image35.png" width="440">
+<img src="docs/figures/image35.png" width="440">
 
 ### Iteration 3: Grid + Local Percentile
 
@@ -68,7 +68,7 @@ I added a Cartesian XY grid (1.5m cells). For each cell I compute the 10th perce
 
 This helped with road slope but created a new problem. In cells occluded by large objects like buses, the local minimum was the bus bottom, not the road. The percentile was wrong for those cells.
 
-<img src="report_images/image36.png" width="440">
+<img src="docs/figures/image36.png" width="440">
 
 ### Iteration 4: Blanket from All Frames
 
@@ -90,9 +90,9 @@ The key insight with polar bins: a bus only covers a limited angular span. In a 
 
 Second, I replaced the constant deviation threshold with distance-adaptive scaling. Near the sensor, tight validation (0.5m) reliably rejects vehicles. At far range, the threshold relaxes (up to 2.0m) to accommodate road slope. The formula is: allowed_deviation = min(0.5 + r * 0.08, 2.0).
 
-<img src="report_images/image37.png" width="440">
+<img src="docs/figures/image37.png" width="440">
 
-<img src="report_images/image38.png" width="440">
+<img src="docs/figures/image38.png" width="440">
 
 I also replaced np.percentile with np.partition for the per-bin ground height calculation. np.percentile sorts the entire array at O(N log N) while np.partition uses quickselect at O(N) to find the k-th smallest element without sorting. For ~3,600 polar bins this brought ground removal latency from ~200ms to ~100ms per frame.
 
@@ -123,9 +123,9 @@ After rotation, z is true height above ground and XY is true horizontal range. I
 
 The 3m height limit was originally 10m. I tightened it after observing that tree foliage above parked cars was causing them to merge into one giant cluster in the BEV grid.
 
-<img src="report_images/image39.png" width="320">
+<img src="docs/figures/image39.png" width="320">
 
-<img src="report_images/image40.png" width="320">
+<img src="docs/figures/image40.png" width="320">
 
 *Figure on top the car was not classified correctly because it had noise from tree overhang, after reducing z to 4m it was classified correctly*
 
@@ -149,7 +149,7 @@ DBSCAN was my first thought. But DBSCAN on 140k points would take minutes becaus
 
 When I oriented the point cloud to bird's eye view, the clusters were clearly visible. From an elevated infrastructure sensor, objects separate naturally in the horizontal plane. A car and a pedestrian next to each other don't overlap vertically like they would from a vehicle-mounted sensor, they're side by side.
 
-<img src="report_images/image41.png" width="440">
+<img src="docs/figures/image41.png" width="440">
 
 So I projected non-ground points to a 2D occupancy grid at 0.15m resolution (matching the sensor's point spacing of ~0.09-0.12m). A cell is occupied if it has at least 2 points. Then scipy's ndimage.label does flood-fill connected component labeling. This is O(N) for the grid projection and O(grid_size) for the labeling. Much faster than DBSCAN.
 
@@ -309,11 +309,11 @@ The confirmed track count grows steadily from 134 in frame 2 to 184 in frame 10 
 
 The tracking ratio (tracked/detected) is consistently high: 90-99% of detected objects are matched to confirmed tracks from frame 3 onward, indicating stable associations.
 
-<img src="report_images/image43.png" width="440">
+<img src="docs/figures/image43.png" width="440">
 
 *Full scene with clusters marked: car - blue, pedestrians - red, bicyclists - yellow, background - grey*
 
-<img src="report_images/image44.png" width="440">
+<img src="docs/figures/image44.png" width="440">
 
 *Clusters marked ith tracker dot on top of bounding box*
 
@@ -350,22 +350,22 @@ Replacing scatter ops with np.bincount and precomputing per-cell statistics duri
 **Consistent misses:** A parked car that gets classified as background in every frame never enters the tracker. The tracker handles intermittent misses (bridges 1-2 frame gaps) but cannot recover objects that are consistently missed by the classifier. For production, a static object detection module that promotes persistent detections regardless of class would address this.
 
 <div style="display: flex; align-items: center; gap: 10px;">
-  <img src="report_images/image45.png" width="300">
-  <img src="report_images/image46.png" width="300">
+  <img src="docs/figures/image45.png" width="300">
+  <img src="docs/figures/image46.png" width="300">
 </div>
 
 **Pedestrian groups classified as cars:** When multiple pedestrians walk close together, BEV connected components merges them into one cluster. The combined shape has car-like dimensions (wide footprint, moderate height) and the RF classifies it as a car. The PCA gap-finding split catches cases where pedestrians are roughly in a line, but fails when they form an L-shape or triangle with no clear principal split axis. The track-guided split helps in later frames once individual tracks have been established, but the initial misclassification persists until the group separates. A density-based sub-clustering step (mini-DBSCAN within the cluster at tighter eps) or a learned pedestrian group detector would address this.
 <div style="display: flex; align-items: center; gap: 10px;">
-  <img src="report_images/image47.png" width="300">
-  <img src="report_images/image48.png" width="300">
+  <img src="docs/figures/image47.png" width="300">
+  <img src="docs/figures/image48.png" width="300">
 </div>
 
 **No ground truth evaluation:** Without labeled optional challenge data, all evaluation is visual inspection plus consistency metrics (ground percentage stability, cluster count stability, track count stability). The RF accuracy numbers from Task 1 (0.80 macro-F1) are the best proxy for per-cluster classification quality.
 
 **Bicyclist confusion:** As documented in Task 1, elongated background structures (wall fragments, fences) share geometric properties with bicyclists in feature space. With only 1,305 bicyclist training samples, the RF can't fully learn the boundary. A side-view fill ratio feature (XZ occupancy grid density) would help distinguish filled rectangular surfaces from irregular human+bicycle silhouettes.
 <div style="display: flex; align-items: center; gap: 10px;">
-  <img src="report_images/image49.png" width="300">
-  <img src="report_images/image51.png" width="300">
+  <img src="docs/figures/image49.png" width="300">
+  <img src="docs/figures/image51.png" width="300">
 </div>
 
 &nbsp;
@@ -376,7 +376,7 @@ Replacing scatter ops with np.bincount and precomputing per-cell statistics duri
 
 ## Pipeline Demo
 
-<img src="pipeline_demo.gif" width="480">
+<img src="../../pipeline_demo.gif" width="480">
 
 10 sequential LiDAR frames processed through the full pipeline - ground removal, 
 BEV clustering, split/merge, RF classification, and Kalman filter tracking. 
